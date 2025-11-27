@@ -422,7 +422,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             height: 100,
                             isUserProfileTile: true,
                             flex: 1,
-                            title: 'User Profile',
+                            title: 'Godrej Test',
                             tileColor: Colors.lightBlue[400]!,
                             icon:
                                 'images/animations/Profile Avatar of Young Boy.json',

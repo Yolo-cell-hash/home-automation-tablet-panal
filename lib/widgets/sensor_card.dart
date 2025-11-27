@@ -1,6 +1,6 @@
 import 'package:animate_do/animate_do.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:home_automation_tablet/widgets/preset_content.dart';
 
 class SensorCard extends StatefulWidget {
@@ -30,34 +30,27 @@ class _SensorCardState extends State<SensorCard> {
         margin: const EdgeInsets.all(15),
         child: GestureDetector(
           onTap: () {
-            showDialog(
+            showCupertinoDialog(
               context: context,
               builder: (BuildContext context) {
                 return FadeIn(
-                  child: AlertDialog(
-                    backgroundColor: Colors.blueAccent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15.0),
-                    ),
+                  child: CupertinoAlertDialog(
                     title: Text(
                       '${widget.title} Preset',
-                      style: TextStyle(color: Colors.white),
+                      style: TextStyle(color: CupertinoColors.black),
                     ),
                     content: PresetContent(presetTitle: widget.title),
                     actions: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                            child: Text(
-                              'Close',
-                              style: TextStyle(color: Colors.white),
-                            ),
+                      Center(
+                        child: CupertinoDialogAction(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          child: Text(
+                            'Close',
+                            style: TextStyle(color: CupertinoColors.systemBlue),
                           ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
@@ -65,9 +58,20 @@ class _SensorCardState extends State<SensorCard> {
               },
             );
           },
-          child: Card(
-            color: Colors.lightBlue[400]!,
-            elevation: widget.elevation ?? 4,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.lightBlue[400]!,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: CupertinoColors.black.withOpacity(
+                    0.1 * (widget.elevation ?? 4),
+                  ),
+                  blurRadius: widget.elevation ?? 4,
+                  offset: Offset(0, (widget.elevation ?? 4) / 2),
+                ),
+              ],
+            ),
             child: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -80,7 +84,7 @@ class _SensorCardState extends State<SensorCard> {
                   Text(
                     widget.title,
                     style: TextStyle(
-                      color: Colors.white,
+                      color: CupertinoColors.white,
                       fontSize: 20,
                       fontWeight: FontWeight.w500,
                     ),

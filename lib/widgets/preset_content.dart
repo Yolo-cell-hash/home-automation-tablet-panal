@@ -45,7 +45,7 @@ class _PresetContentState extends State<PresetContent> {
     },
     'Fire Sensor Configuration': {'Alarm': 'On', 'Notifications': 'Enabled'},
     'Gas Sensor Configuration': {'Alarm': 'On', 'Notifications': 'Enabled'},
-    'Window Sensor Configuration': {'Notifications': 'Enabled'},
+    'Window Sensor Configuration': {'Alarm': 'On', 'Notifications': 'Enabled'},
     'Lights Configuration': {'Access': 'On', 'Notifications': 'Enabled'},
   };
 
@@ -303,9 +303,9 @@ class _PresetContentState extends State<PresetContent> {
             child: Text(
               '$title:',
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: CupertinoColors.white,
+                color: CupertinoColors.black,
               ),
             ),
           ),
