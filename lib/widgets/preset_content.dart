@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:home_automation_tablet/utils/app_state.dart';
 import 'package:home_automation_tablet/utils/fb_utils.dart';
 import 'package:provider/provider.dart';
@@ -15,6 +15,7 @@ class PresetContent extends StatefulWidget {
 class _PresetContentState extends State<PresetContent> {
   bool isEditing = false;
   bool isSaving = false;
+  bool isLoadingFromFirebase = true;
   late Map<String, TextEditingController> controllers;
 
   Map<String, Map<String, String>> defaultPresets = {
@@ -48,7 +49,6 @@ class _PresetContentState extends State<PresetContent> {
     'Lights Configuration': {'Access': 'On', 'Notifications': 'Enabled'},
   };
 
-  // Define fields that should use dropdowns and their options
   Map<String, List<String>> dropdownOptions = {
     'Alarm': ['On', 'Off'],
     'Notifications': ['Enabled', 'Disabled'],
@@ -70,44 +70,138 @@ class _PresetContentState extends State<PresetContent> {
     final presetConfig = defaultPresets[widget.presetTitle] ?? {};
 
     for (String key in presetConfig.keys) {
-      controllers[key] = TextEditingController(text: presetConfig[key]);
+      controllers[key] = TextEditingController(text: '');
     }
   }
 
-  /// Load preset data from Firebase
   Future<void> loadPresetFromFirebase() async {
     try {
+      print('Loading ${widget.presetTitle} from Firebase...');
+
       final presetData = await FirebaseUtils.readPreset(widget.presetTitle);
 
-      if (presetData != null && mounted) {
-        setState(() {
-          // Update controllers with Firebase data
-          if (presetData['ac_temp'] != null) {
-            controllers['AC Temperature']?.text = '${presetData['ac_temp']}°C';
-          }
-          if (presetData['lights'] != null) {
-            controllers['Lights']?.text = presetData['lights'] ? 'On' : 'Off';
-          }
-          if (presetData['security'] != null) {
-            controllers['Security']?.text = presetData['security']
-                ? 'Active'
-                : 'Inactive';
-          }
-          if (presetData['window'] != null) {
-            controllers['Curtains']?.text = presetData['window']
-                ? 'Open'
-                : 'Closed';
-          }
-        });
+      if (mounted) {
+        if (presetData != null && presetData.isNotEmpty) {
+          setState(() {
+            _applyFirebaseData(presetData);
+            isLoadingFromFirebase = false;
+          });
+          print('✅ Loaded ${widget.presetTitle} from Firebase: $presetData');
+        } else {
+          setState(() {
+            _loadDefaultValues();
+            isLoadingFromFirebase = false;
+          });
+          print(
+            '⚠️ No Firebase data, using defaults for ${widget.presetTitle}',
+          );
+        }
       }
     } catch (e) {
-      print('Error loading preset from Firebase: $e');
+      print('❌ Error loading ${widget.presetTitle} from Firebase: $e');
+      if (mounted) {
+        setState(() {
+          _loadDefaultValues();
+          isLoadingFromFirebase = false;
+        });
+
+        showCupertinoDialog(
+          context: context,
+          builder: (context) => CupertinoAlertDialog(
+            title: Text('Connection Error'),
+            content: Text(
+              'Failed to load ${widget.presetTitle} from database. Using default values.',
+            ),
+            actions: [
+              CupertinoDialogAction(
+                child: Text('OK'),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+        );
+      }
     }
+  }
+
+  void _applyFirebaseData(Map<String, dynamic> presetData) {
+    // Check if data is nested (e.g., morning_preset inside morning_preset)
+    String presetKey = '${widget.presetTitle.toLowerCase()}_preset';
+    Map<String, dynamic>? actualPresetData;
+
+    if (presetData.containsKey(presetKey)) {
+      // Data is nested, extract the actual preset
+      actualPresetData = Map<String, dynamic>.from(presetData[presetKey]);
+      print('📦 Extracting nested preset data: $actualPresetData');
+    } else {
+      // Data is already in the correct format
+      actualPresetData = presetData;
+    }
+
+    // AC Temperature
+    if (actualPresetData['ac_temp'] != null) {
+      controllers['AC Temperature']?.text = '${actualPresetData['ac_temp']}°C';
+    }
+
+    // Lights
+    if (actualPresetData['lights'] != null) {
+      controllers['Lights']?.text = actualPresetData['lights'] == true
+          ? 'On'
+          : 'Off';
+    }
+
+    // Security
+    if (actualPresetData['security'] != null) {
+      controllers['Security']?.text = actualPresetData['security'] == true
+          ? 'Active'
+          : 'Inactive';
+    }
+
+    // Curtains/Window
+    if (actualPresetData['window'] != null) {
+      if (actualPresetData['window'] is bool) {
+        controllers['Curtains']?.text = actualPresetData['window'] == true
+            ? 'Open'
+            : 'Closed';
+      } else if (actualPresetData['window'] is String) {
+        controllers['Curtains']?.text = actualPresetData['window'];
+      }
+    }
+
+    // Alarm
+    if (actualPresetData['alarm'] != null) {
+      controllers['Alarm']?.text = actualPresetData['alarm'] == true
+          ? 'On'
+          : 'Off';
+    }
+
+    // Notifications
+    if (actualPresetData['notifications'] != null) {
+      controllers['Notifications']?.text =
+          actualPresetData['notifications'] == true ? 'Enabled' : 'Disabled';
+    }
+
+    // Access
+    if (actualPresetData['access'] != null) {
+      controllers['Access']?.text = actualPresetData['access'] == true
+          ? 'On'
+          : 'Off';
+    }
+
+    print('✅ Applied preset data to controllers');
+  }
+
+  void _loadDefaultValues() {
+    final defaultConfig = defaultPresets[widget.presetTitle] ?? {};
+    controllers.forEach((key, controller) {
+      if (defaultConfig.containsKey(key)) {
+        controller.text = defaultConfig[key]!;
+      }
+    });
   }
 
   @override
   void dispose() {
-    // Dispose all controllers
     for (var controller in controllers.values) {
       controller.dispose();
     }
@@ -132,13 +226,11 @@ class _PresetContentState extends State<PresetContent> {
     try {
       final appState = Provider.of<AppState>(context, listen: false);
 
-      // Create a map with the updated values
       Map<String, String> updatedPreset = {};
       controllers.forEach((key, controller) {
         updatedPreset[key] = controller.text;
       });
 
-      // Save to Firebase
       await FirebaseUtils.savePreset(widget.presetTitle, updatedPreset);
 
       print('Saving ${widget.presetTitle} preset: $updatedPreset');
@@ -148,19 +240,21 @@ class _PresetContentState extends State<PresetContent> {
         isSaving = false;
       });
 
-      // Show success confirmation
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 8),
-                Text('${widget.presetTitle} preset saved successfully! '),
-              ],
-            ),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
+        showCupertinoDialog(
+          context: context,
+          builder: (context) => CupertinoAlertDialog(
+            title: Text('Success'),
+            content: Text('${widget.presetTitle} preset saved successfully!'),
+            actions: [
+              CupertinoDialogAction(
+                child: Text('OK'),
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.pop(context);
+                },
+              ),
+            ],
           ),
         );
       }
@@ -169,19 +263,18 @@ class _PresetContentState extends State<PresetContent> {
         isSaving = false;
       });
 
-      // Show error message
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.error, color: Colors.white),
-                SizedBox(width: 8),
-                Expanded(child: Text('Failed to save preset: ${e.toString()}')),
-              ],
-            ),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
+        showCupertinoDialog(
+          context: context,
+          builder: (context) => CupertinoAlertDialog(
+            title: Text('Error'),
+            content: Text('Failed to save preset: ${e.toString()}'),
+            actions: [
+              CupertinoDialogAction(
+                child: Text('OK'),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
           ),
         );
       }
@@ -212,7 +305,7 @@ class _PresetContentState extends State<PresetContent> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w500,
-                color: Colors.white,
+                color: CupertinoColors.white,
               ),
             ),
           ),
@@ -234,37 +327,93 @@ class _PresetContentState extends State<PresetContent> {
     List<String> options = dropdownOptions[fieldName] ?? [];
     String currentValue = controller.text;
 
-    // Ensure current value is in options, if not add it
     if (!options.contains(currentValue) && currentValue.isNotEmpty) {
       options.add(currentValue);
     }
 
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white54),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: currentValue.isNotEmpty ? currentValue : null,
-          isExpanded: true,
-          hint: Text(
-            'Select $fieldName',
-            style: TextStyle(color: Colors.black54, fontSize: 14),
-          ),
-          style: TextStyle(fontSize: 14, color: Colors.black87),
-          items: options.map((String value) {
-            return DropdownMenuItem<String>(value: value, child: Text(value));
-          }).toList(),
-          onChanged: (String? newValue) {
-            if (newValue != null) {
-              setState(() {
-                controller.text = newValue;
-              });
-            }
+    return GestureDetector(
+      onTap: () {
+        showCupertinoModalPopup(
+          context: context,
+          builder: (BuildContext context) {
+            int selectedIndex = options.indexOf(currentValue);
+            if (selectedIndex == -1) selectedIndex = 0;
+
+            return Container(
+              height: 250,
+              color: CupertinoColors.systemBackground,
+              child: Column(
+                children: [
+                  Container(
+                    height: 44,
+                    color: CupertinoColors.systemGrey6,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        CupertinoButton(
+                          child: Text('Cancel'),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        CupertinoButton(
+                          child: Text('Done'),
+                          onPressed: () {
+                            setState(() {
+                              controller.text = options[selectedIndex];
+                            });
+                            Navigator.pop(context);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: CupertinoPicker(
+                      itemExtent: 32,
+                      scrollController: FixedExtentScrollController(
+                        initialItem: selectedIndex,
+                      ),
+                      onSelectedItemChanged: (int index) {
+                        selectedIndex = index;
+                      },
+                      children: options.map((String value) {
+                        return Center(child: Text(value));
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
+            );
           },
+        );
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: CupertinoColors.white.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: CupertinoColors.systemGrey4),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Flexible(
+              child: Text(
+                currentValue.isNotEmpty ? currentValue : 'Select $fieldName',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: currentValue.isNotEmpty
+                      ? CupertinoColors.black
+                      : CupertinoColors.systemGrey,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Icon(
+              CupertinoIcons.chevron_down,
+              color: CupertinoColors.systemGrey,
+              size: 18,
+            ),
+          ],
         ),
       ),
     );
@@ -274,17 +423,15 @@ class _PresetContentState extends State<PresetContent> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
+        color: CupertinoColors.white.withOpacity(0.9),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white54),
+        border: Border.all(color: CupertinoColors.systemGrey4),
       ),
-      child: TextField(
+      child: CupertinoTextField(
         controller: controller,
-        style: TextStyle(fontSize: 14, color: Colors.black87),
-        decoration: InputDecoration(
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(vertical: 8),
-        ),
+        style: TextStyle(fontSize: 14, color: CupertinoColors.black),
+        decoration: BoxDecoration(),
+        padding: EdgeInsets.symmetric(vertical: 8),
       ),
     );
   }
@@ -293,15 +440,15 @@ class _PresetContentState extends State<PresetContent> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.blue[800],
+        color: CupertinoColors.activeBlue,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white54),
+        border: Border.all(color: CupertinoColors.systemGrey4),
       ),
       child: Text(
         controller.text,
         style: TextStyle(
           fontSize: 14,
-          color: Colors.white,
+          color: CupertinoColors.white,
           fontWeight: FontWeight.w400,
         ),
       ),
@@ -316,64 +463,71 @@ class _PresetContentState extends State<PresetContent> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Configuration items
           ...controllers.entries
               .map((entry) => buildConfigItem(entry.key, entry.value))
               .toList(),
-
           SizedBox(height: 20),
-
-          // Action buttons when editing
           if (isEditing) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                ElevatedButton.icon(
+                CupertinoButton(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  color: CupertinoColors.activeGreen,
                   onPressed: isSaving ? null : saveChanges,
-                  icon: isSaving
-                      ? SizedBox(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (isSaving)
+                        SizedBox(
                           width: 16,
                           height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
-                          ),
+                          child: CupertinoActivityIndicator(radius: 8),
                         )
-                      : Icon(Icons.save, size: 16),
-                  label: Text(isSaving ? 'Saving...' : 'Save'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      else
+                        Icon(CupertinoIcons.check_mark, size: 16),
+                      SizedBox(width: 4),
+                      Text(isSaving ? 'Saving...' : 'Save'),
+                    ],
                   ),
                 ),
-                ElevatedButton.icon(
+                CupertinoButton(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  color: CupertinoColors.systemOrange,
                   onPressed: isSaving ? null : resetToDefaults,
-                  icon: Icon(Icons.refresh, size: 16),
-                  label: Text('Reset'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(CupertinoIcons.refresh, size: 16),
+                      SizedBox(width: 4),
+                      Text('Reset'),
+                    ],
                   ),
                 ),
               ],
             ),
             SizedBox(height: 10),
           ],
-
-          // Edit/Cancel button
           Center(
-            child: ElevatedButton.icon(
+            child: CupertinoButton(
+              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              color: isEditing
+                  ? CupertinoColors.systemRed
+                  : CupertinoColors.activeBlue,
               onPressed: isSaving ? null : toggleEdit,
-              icon: Icon(isEditing ? Icons.cancel : Icons.edit, size: 16),
-              label: Text(isEditing ? 'Cancel' : 'Edit Preset'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isEditing ? Colors.red : Colors.blue[800],
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isEditing ? CupertinoIcons.xmark : CupertinoIcons.pencil,
+                    size: 16,
+                  ),
+                  SizedBox(width: 4),
+                  Text(
+                    isEditing ? 'Cancel' : 'Edit Preset',
+                    style: TextStyle(color: CupertinoColors.white),
+                  ),
+                ],
               ),
             ),
           ),

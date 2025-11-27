@@ -5,7 +5,7 @@ class FirebaseUtils {
   static final FirebaseDatabase _database = FirebaseDatabase.instanceFor(
     app: Firebase.app(),
     databaseURL:
-        'https://iot9systemintegration-default-rtdb.asia-southeast1.firebasedatabase.app/',
+        'https://vdb-poc-default-rtdb.asia-southeast1.firebasedatabase.app/',
   );
 
   /// Get a reference to a specific path in the database
@@ -158,24 +158,37 @@ class FirebaseUtils {
   /// Returns a Future with the preset data or null if not found
   static Future<Map<String, dynamic>?> readPreset(String presetName) async {
     try {
+      // Convert to lowercase and add _preset suffix
       String formattedPresetName = presetName.toLowerCase().replaceAll(
         ' ',
         '_',
       );
+
+      if (!formattedPresetName.endsWith('_preset')) {
+        formattedPresetName = '${formattedPresetName}_preset';
+      }
+
+      // Read the nested preset data
       DatabaseReference presetRef = getReference(
-        '/updates/${formattedPresetName}_preset',
+        '/updates/$formattedPresetName',
       );
+
+      print('📖 Reading from path: /updates/$formattedPresetName');
 
       DataSnapshot snapshot = await presetRef.get();
 
       if (snapshot.exists) {
-        return Map<String, dynamic>.from(snapshot.value as Map);
+        Map<String, dynamic> data = Map<String, dynamic>.from(
+          snapshot.value as Map,
+        );
+        print('✅ Successfully read $presetName: $data');
+        return data;
       } else {
-        print('⚠️ No data found for $presetName preset');
+        print('⚠️ No data found at /updates/$formattedPresetName');
         return null;
       }
     } catch (e) {
-      print('❌ Error reading preset from Firebase: $e');
+      print('❌ Error reading preset: $e');
       return null;
     }
   }

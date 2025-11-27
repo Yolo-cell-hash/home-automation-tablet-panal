@@ -26,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   dynamic dbResponse1;
   late DatabaseReference _dbRef1;
   StreamSubscription<DatabaseEvent>? _dbSubscription, _dbSubscription1;
-  bool spinner = true; // Start with spinner on for initial load
+  bool spinner = true;
   dynamic isFire, isWindowOpen, lightsStatus;
 
   // Connection state tracking
@@ -330,7 +330,7 @@ class _HomeScreenState extends State<HomeScreen> {
             FirebaseDatabase database = FirebaseDatabase.instanceFor(
               app: firebaseApp,
               databaseURL:
-                  'https://iot9systemintegration-default-rtdb.asia-southeast1.firebasedatabase.app/',
+                  'https://vdb-poc-default-rtdb.asia-southeast1.firebasedatabase.app/',
             );
 
             _dbRef1 = database.ref("updates");

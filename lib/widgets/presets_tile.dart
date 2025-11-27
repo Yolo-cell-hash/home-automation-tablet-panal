@@ -24,34 +24,25 @@ class _PresetsTileState extends State<PresetsTile> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        showDialog(
+        showCupertinoDialog(
           context: context,
           builder: (BuildContext context) {
             return FadeIn(
-              child: AlertDialog(
-                backgroundColor: Colors.blueAccent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15.0),
-                ),
+              child: CupertinoAlertDialog(
                 title: Text(
                   '${widget.title} Preset',
-                  style: TextStyle(color: Colors.white),
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
                 ),
-                content: PresetContent(presetTitle: widget.title),
+                content: Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: PresetContent(presetTitle: widget.title),
+                ),
                 actions: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: Text(
-                          'Close',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ],
+                  CupertinoDialogAction(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: Text('Close'),
                   ),
                 ],
               ),
