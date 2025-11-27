@@ -14,52 +14,48 @@ class _LockUtilityState extends State<LockUtility> {
   Widget build(BuildContext context) {
     return Container(
       margin: EdgeInsets.all(15),
-      height: 250,
-      width: MediaQuery.of(context).size.width.clamp(0, 800),
+      padding: EdgeInsets.only(top: 0),
       child: Card(
         color: Color(0xFF08306B),
         elevation: 0,
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                'Device Management',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Device Management',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 36,
+                fontWeight: FontWeight.w500,
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(
+              height: 230, // Match SensorCard's default height
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SensorCard(
                     title: 'Front Door',
                     icon: 'images/smart-lock.png',
-                    height: 150,
                     elevation: 0,
                   ),
                   SensorCard(
                     title: 'VDB',
                     icon: 'images/door-bell.png',
-                    height: 150,
                     elevation: 0,
                   ),
                   SensorCard(
                     title: 'Connectivity',
                     icon: 'images/wi-fi-icon.png',
-                    height: 150,
                     elevation: 0,
                   ),
                 ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

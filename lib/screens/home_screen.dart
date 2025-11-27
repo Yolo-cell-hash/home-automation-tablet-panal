@@ -452,30 +452,18 @@ class _HomeScreenState extends State<HomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: Column(
-                              children: [
-                                Container(
-                                  height: 540,
-                                  child: TileCard(
-                                    flex: 1,
-                                    useExpanded: false,
-                                    title: 'Camera',
-                                    tileColor: Colors.lightBlue[400]!,
-                                    height: 540,
-                                    isStatusBar: false,
-                                    icon: 'images/animations/qEITPsoIMt.json',
-                                    isImageTile: true,
-                                    callBack: () {
-                                      print('Clicked');
-                                    },
-                                  ),
-                                ),
-                                AcUnitCard(
-                                  onTap: () {
-                                    print("AC UNIT CLICKED");
-                                  },
-                                ),
-                              ],
+                            child: TileCard(
+                              flex: 1,
+                              useExpanded: false,
+                              title: 'Camera',
+                              tileColor: Colors.lightBlue[400]!,
+                              height: 600,
+                              isStatusBar: false,
+                              icon: 'images/animations/qEITPsoIMt.json',
+                              isImageTile: true,
+                              callBack: () {
+                                print('Clicked');
+                              },
                             ),
                           ),
                           Expanded(
@@ -485,8 +473,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 Container(
-                                  height: 250,
+                                  height: 310,
                                   margin: const EdgeInsets.all(15),
+                                  padding: EdgeInsets.symmetric(vertical: 10.0),
                                   child: Card(
                                     color: Colors.lightBlue[400]!,
                                     elevation: 4,
@@ -528,6 +517,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ),
                                 ),
+                                // SizedBox(height: 10),
                                 Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceEvenly,
@@ -547,30 +537,44 @@ class _HomeScreenState extends State<HomeScreen> {
                                     ),
                                   ],
                                 ),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: SensorCard(
-                                        title: 'Window Sensor Configuration',
-                                        icon: 'images/window.png',
-                                      ),
-                                    ),
-                                    Expanded(
-                                      child: SensorCard(
-                                        title: 'Lights \nConfiguration',
-                                        icon: 'images/light-control.png',
-                                      ),
-                                    ),
-                                  ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: AcUnitCard(
+                              onTap: () {
+                                print("AC UNIT CLICKED");
+                              },
+                            ),
+                          ),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: SensorCard(
+                                    title: 'Window Sensor Configuration',
+                                    icon: 'images/window.png',
+                                  ),
+                                ),
+                                Expanded(
+                                  child: SensorCard(
+                                    title: 'Lights \nConfiguration',
+                                    icon: 'images/light-control.png',
+                                  ),
                                 ),
                               ],
                             ),
                           ),
                         ],
                       ),
+
                       LockUtility(),
                     ],
                   ),

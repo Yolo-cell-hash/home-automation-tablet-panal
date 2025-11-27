@@ -143,7 +143,7 @@ class _TileCardState extends State<TileCard> {
             elevation: 4,
             margin: const EdgeInsets.all(15),
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(8.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -236,7 +236,7 @@ class _TileCardState extends State<TileCard> {
             elevation: 4,
             margin: const EdgeInsets.all(15),
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(8.0),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,

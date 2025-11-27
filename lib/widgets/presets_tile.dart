@@ -60,6 +60,7 @@ class _PresetsTileState extends State<PresetsTile> {
         );
       },
       child: Container(
+        height: 60,
         decoration: BoxDecoration(
           border: Border.all(color: Colors.blueAccent),
           color: Colors.blue[900],
