@@ -5,8 +5,9 @@ import 'package:provider/provider.dart';
 
 class PresetContent extends StatefulWidget {
   final String presetTitle;
+  final String? dbRef;
 
-  const PresetContent({super.key, required this.presetTitle});
+  const PresetContent({super.key, required this.presetTitle, this.dbRef});
 
   @override
   State<PresetContent> createState() => _PresetContentState();
@@ -77,16 +78,31 @@ class _PresetContentState extends State<PresetContent> {
   Future<void> loadPresetFromFirebase() async {
     try {
       print('Loading ${widget.presetTitle} from Firebase...');
+      print('Loading from custom dbRef: ${widget.dbRef}');
 
-      final presetData = await FirebaseUtils.readPreset(widget.presetTitle);
+      Map<String, dynamic>? data;
+
+      if (widget.dbRef != null && widget.dbRef!.isNotEmpty) {
+        data = await FirebaseUtils.readFromPath(widget.dbRef!);
+      } else {
+        data = await FirebaseUtils.readPreset(widget.presetTitle);
+      }
 
       if (mounted) {
-        if (presetData != null && presetData.isNotEmpty) {
+        if (data != null && data.isNotEmpty) {
+          print('🔍 Raw data received: $data');
+
+          // Extract the specific configuration based on the dbRef path
+          Map<String, dynamic> extractedData = _extractConfigurationData(data);
+
+          print('📦 Extracted data: $extractedData');
+
           setState(() {
-            _applyFirebaseData(presetData);
+            _applyDataToControllers(extractedData);
             isLoadingFromFirebase = false;
           });
-          print('✅ Loaded ${widget.presetTitle} from Firebase: $presetData');
+
+          print('✅ Loaded ${widget.presetTitle} from Firebase');
         } else {
           setState(() {
             _loadDefaultValues();
@@ -124,71 +140,104 @@ class _PresetContentState extends State<PresetContent> {
     }
   }
 
-  void _applyFirebaseData(Map<String, dynamic> presetData) {
-    // Check if data is nested (e.g., morning_preset inside morning_preset)
-    String presetKey = '${widget.presetTitle.toLowerCase()}_preset';
-    Map<String, dynamic>? actualPresetData;
-
-    if (presetData.containsKey(presetKey)) {
-      // Data is nested, extract the actual preset
-      actualPresetData = Map<String, dynamic>.from(presetData[presetKey]);
-      print('📦 Extracting nested preset data: $actualPresetData');
-    } else {
-      // Data is already in the correct format
-      actualPresetData = presetData;
+  Map<String, dynamic> _extractConfigurationData(Map<String, dynamic> data) {
+    // If dbRef is null or empty, return data as-is (for presets)
+    if (widget.dbRef == null || widget.dbRef!.isEmpty) {
+      return data;
     }
 
+    // Get the last segment of the path (e.g., 'fire_sensor_configs')
+    String configKey = widget.dbRef!.split('/').last;
+
+    print('🔑 Looking for config key: $configKey');
+
+    // Check if data already contains the specific config
+    if (data.containsKey(configKey) && data[configKey] is Map) {
+      return Map<String, dynamic>.from(data[configKey]);
+    }
+
+    // If data doesn't contain the key, it might already be the config we want
+    // Check if it has the expected fields
+    bool hasExpectedFields = false;
+
+    switch (configKey) {
+      case 'fire_sensor_configs':
+      case 'gas_sensor_config':
+      case 'window_sensor_config':
+        hasExpectedFields =
+            data.containsKey('alarm') || data.containsKey('notifications');
+        break;
+      case 'lights_config':
+        hasExpectedFields =
+            data.containsKey('access') || data.containsKey('notifications');
+        break;
+      default:
+        hasExpectedFields = true; // Assume it's correct for unknown configs
+    }
+
+    if (hasExpectedFields) {
+      return data;
+    }
+
+    // If we reach here, we couldn't find the config, return empty map
+    print('⚠️ Could not extract config for $configKey, returning empty map');
+    return {};
+  }
+
+  void _applyDataToControllers(Map<String, dynamic> configData) {
+    print('🔧 Applying data to controllers');
+    print('Config data: $configData');
+
     // AC Temperature
-    if (actualPresetData['ac_temp'] != null) {
-      controllers['AC Temperature']?.text = '${actualPresetData['ac_temp']}°C';
+    if (configData.containsKey('ac_temp') && configData['ac_temp'] != null) {
+      controllers['AC Temperature']?.text = '${configData['ac_temp']}°C';
     }
 
     // Lights
-    if (actualPresetData['lights'] != null) {
-      controllers['Lights']?.text = actualPresetData['lights'] == true
-          ? 'On'
-          : 'Off';
+    if (configData.containsKey('lights') && configData['lights'] != null) {
+      controllers['Lights']?.text = configData['lights'] == true ? 'On' : 'Off';
     }
 
     // Security
-    if (actualPresetData['security'] != null) {
-      controllers['Security']?.text = actualPresetData['security'] == true
+    if (configData.containsKey('security') && configData['security'] != null) {
+      controllers['Security']?.text = configData['security'] == true
           ? 'Active'
           : 'Inactive';
     }
 
     // Curtains/Window
-    if (actualPresetData['window'] != null) {
-      if (actualPresetData['window'] is bool) {
-        controllers['Curtains']?.text = actualPresetData['window'] == true
+    if (configData.containsKey('window') && configData['window'] != null) {
+      if (configData['window'] is bool) {
+        controllers['Curtains']?.text = configData['window'] == true
             ? 'Open'
             : 'Closed';
-      } else if (actualPresetData['window'] is String) {
-        controllers['Curtains']?.text = actualPresetData['window'];
+      } else if (configData['window'] is String) {
+        controllers['Curtains']?.text = configData['window'];
       }
     }
 
-    // Alarm
-    if (actualPresetData['alarm'] != null) {
-      controllers['Alarm']?.text = actualPresetData['alarm'] == true
-          ? 'On'
-          : 'Off';
+    // Alarm (for sensor configurations)
+    if (configData.containsKey('alarm') && configData['alarm'] != null) {
+      controllers['Alarm']?.text = configData['alarm'] == true ? 'On' : 'Off';
     }
 
-    // Notifications
-    if (actualPresetData['notifications'] != null) {
-      controllers['Notifications']?.text =
-          actualPresetData['notifications'] == true ? 'Enabled' : 'Disabled';
+    // Notifications (for sensor configurations)
+    if (configData.containsKey('notifications') &&
+        configData['notifications'] != null) {
+      controllers['Notifications']?.text = configData['notifications'] == true
+          ? 'Enabled'
+          : 'Disabled';
     }
 
-    // Access
-    if (actualPresetData['access'] != null) {
-      controllers['Access']?.text = actualPresetData['access'] == true
-          ? 'On'
-          : 'Off';
+    // Access (for lights configuration)
+    if (configData.containsKey('access') && configData['access'] != null) {
+      controllers['Access']?.text = configData['access'] == true ? 'On' : 'Off';
     }
 
-    print('✅ Applied preset data to controllers');
+    print('✅ Applied data to controllers');
+    print(
+      'Controller values: ${controllers.map((k, v) => MapEntry(k, v.text))}',
+    );
   }
 
   void _loadDefaultValues() {
@@ -224,60 +273,145 @@ class _PresetContentState extends State<PresetContent> {
     });
 
     try {
-      final appState = Provider.of<AppState>(context, listen: false);
-
-      Map<String, String> updatedPreset = {};
+      Map<String, String> currentValues = {};
       controllers.forEach((key, controller) {
-        updatedPreset[key] = controller.text;
+        currentValues[key] = controller.text;
       });
 
-      await FirebaseUtils.savePreset(widget.presetTitle, updatedPreset);
+      print('💾 Saving ${widget.presetTitle}...');
+      print('Values to save: $currentValues');
 
-      print('Saving ${widget.presetTitle} preset: $updatedPreset');
-
-      setState(() {
-        isEditing = false;
-        isSaving = false;
-      });
+      if (widget.dbRef != null && widget.dbRef!.isNotEmpty) {
+        await _saveToCustomPath(widget.dbRef!, currentValues);
+      } else {
+        await FirebaseUtils.savePreset(widget.presetTitle, currentValues);
+      }
 
       if (mounted) {
+        setState(() {
+          isEditing = false;
+          isSaving = false;
+        });
+
+        final appState = Provider.of<AppState>(context, listen: false);
+        appState.notifyListeners();
+
         showCupertinoDialog(
           context: context,
           builder: (context) => CupertinoAlertDialog(
             title: Text('Success'),
-            content: Text('${widget.presetTitle} preset saved successfully!'),
+            content: Text('${widget.presetTitle} has been saved successfully!'),
             actions: [
               CupertinoDialogAction(
                 child: Text('OK'),
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.pop(context);
-                },
+                onPressed: () => Navigator.of(context).pop(),
               ),
             ],
           ),
         );
+
+        print('✅ Successfully saved ${widget.presetTitle}');
       }
     } catch (e) {
-      setState(() {
-        isSaving = false;
-      });
+      print('❌ Error saving ${widget.presetTitle}: $e');
 
       if (mounted) {
+        setState(() {
+          isSaving = false;
+        });
+
         showCupertinoDialog(
           context: context,
           builder: (context) => CupertinoAlertDialog(
             title: Text('Error'),
-            content: Text('Failed to save preset: ${e.toString()}'),
+            content: Text('Failed to save changes. Please try again.'),
             actions: [
               CupertinoDialogAction(
                 child: Text('OK'),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.of(context).pop(),
               ),
             ],
           ),
         );
       }
+    }
+  }
+
+  Future<void> _saveToCustomPath(
+    String path,
+    Map<String, String> values,
+  ) async {
+    try {
+      print('💾 Saving to custom path: $path');
+
+      Map<String, dynamic> firebaseData = _convertToFirebaseFormat(values);
+
+      print('Converted data: $firebaseData');
+
+      await FirebaseUtils.writeToPath(path, firebaseData);
+
+      print('✅ Successfully saved to $path');
+    } catch (e) {
+      print('❌ Error saving to custom path: $e');
+      rethrow;
+    }
+  }
+
+  Map<String, dynamic> _convertToFirebaseFormat(Map<String, String> values) {
+    Map<String, dynamic> firebaseData = {};
+
+    values.forEach((key, value) {
+      String firebaseKey = _getFirebaseKey(key);
+      dynamic firebaseValue = _getFirebaseValue(key, value);
+
+      if (firebaseValue != null) {
+        firebaseData[firebaseKey] = firebaseValue;
+      }
+    });
+
+    return firebaseData;
+  }
+
+  String _getFirebaseKey(String displayKey) {
+    switch (displayKey) {
+      case 'Alarm':
+        return 'alarm';
+      case 'Notifications':
+        return 'notifications';
+      case 'Access':
+        return 'access';
+      case 'AC Temperature':
+        return 'ac_temp';
+      case 'Lights':
+        return 'lights';
+      case 'Security':
+        return 'security';
+      case 'Curtains':
+        return 'window';
+      default:
+        return displayKey.toLowerCase().replaceAll(' ', '_');
+    }
+  }
+
+  dynamic _getFirebaseValue(String key, String value) {
+    switch (key) {
+      case 'Alarm':
+        return value.toLowerCase() == 'on';
+      case 'Notifications':
+        return value.toLowerCase() == 'enabled';
+      case 'Access':
+        return value.toLowerCase() == 'on';
+      case 'Lights':
+        return value.toLowerCase() == 'on';
+      case 'Security':
+        return value.toLowerCase() == 'active';
+      case 'Curtains':
+        return value.toLowerCase() == 'open';
+      case 'AC Temperature':
+        String numericString = value.replaceAll(RegExp(r'[^0-9-]'), '');
+        return int.tryParse(numericString) ?? 22;
+      default:
+        return value;
     }
   }
 

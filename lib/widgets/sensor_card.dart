@@ -8,6 +8,7 @@ class SensorCard extends StatefulWidget {
   final String icon;
   final double? height;
   final double? elevation;
+  final String dbRef;
 
   const SensorCard({
     super.key,
@@ -15,6 +16,7 @@ class SensorCard extends StatefulWidget {
     required this.icon,
     this.height,
     this.elevation,
+    this.dbRef = '',
   });
 
   @override
@@ -39,7 +41,10 @@ class _SensorCardState extends State<SensorCard> {
                       '${widget.title} Preset',
                       style: TextStyle(color: CupertinoColors.black),
                     ),
-                    content: PresetContent(presetTitle: widget.title),
+                    content: PresetContent(
+                      presetTitle: widget.title,
+                      dbRef: widget.dbRef,
+                    ),
                     actions: [
                       Center(
                         child: CupertinoDialogAction(

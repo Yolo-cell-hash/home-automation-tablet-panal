@@ -527,12 +527,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                       child: SensorCard(
                                         title: 'Fire Sensor Configuration',
                                         icon: 'images/fire.png',
+                                        dbRef: '/updates/fire_sensor_configs',
                                       ),
                                     ),
                                     Expanded(
                                       child: SensorCard(
                                         title: 'Gas Sensor Configuration',
                                         icon: 'images/gas.png',
+                                        dbRef: '/updates/gas_sensor_config',
                                       ),
                                     ),
                                   ],
@@ -561,12 +563,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                   child: SensorCard(
                                     title: 'Window Sensor Configuration',
                                     icon: 'images/window.png',
+                                    dbRef: '/updates/window_sensor_config',
                                   ),
                                 ),
                                 Expanded(
                                   child: SensorCard(
                                     title: 'Lights \nConfiguration',
                                     icon: 'images/light-control.png',
+                                    dbRef: '/updates/lights_config',
                                   ),
                                 ),
                               ],

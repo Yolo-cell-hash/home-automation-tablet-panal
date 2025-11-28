@@ -117,6 +117,55 @@ class FirebaseUtils {
     }
   }
 
+  /// Read data from a specific Firebase path
+  ///
+  /// [path] - The full path to read from (e.g., '/updates/fire_sensor_configs')
+  /// Returns a Future with the data or null if not found
+  static Future<Map<String, dynamic>?> readFromPath(String path) async {
+    try {
+      print('📖 Reading from path: $path');
+
+      DatabaseReference ref = getReference(path);
+      DataSnapshot snapshot = await ref.get();
+
+      if (snapshot.exists) {
+        Map<String, dynamic> data = Map<String, dynamic>.from(
+          snapshot.value as Map,
+        );
+        print('✅ Successfully read data from $path: $data');
+        return data;
+      } else {
+        print('⚠️ No data found at $path');
+        return null;
+      }
+    } catch (e) {
+      print('❌ Error reading from path $path: $e');
+      return null;
+    }
+  }
+
+  /// Write data to a specific Firebase path
+  ///
+  /// [path] - The full path to write to (e.g., '/updates/fire_sensor_configs')
+  /// [data] - Map containing the data to write
+  static Future<void> writeToPath(
+    String path,
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      print('✍️ Writing to path: $path');
+      print('Data: $data');
+
+      DatabaseReference ref = getReference(path);
+      await ref.update(data);
+
+      print('✅ Successfully wrote data to $path');
+    } catch (e) {
+      print('❌ Error writing to path $path: $e');
+      rethrow;
+    }
+  }
+
   /// Convert string representation to boolean
   static bool _stringToBool(String value) {
     String lowerValue = value.toLowerCase();
