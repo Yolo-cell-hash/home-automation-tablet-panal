@@ -40,7 +40,7 @@ class _AcUnitCardState extends State<AcUnitCard> {
                 Flexible(
                   flex: 1,
                   child: Text(
-                    'AC UNIT Configuration',
+                    'AC Unit Configuration',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 20,

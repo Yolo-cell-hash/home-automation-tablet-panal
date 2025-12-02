@@ -141,9 +141,18 @@ class _PresetContentState extends State<PresetContent> {
   }
 
   Map<String, dynamic> _extractConfigurationData(Map<String, dynamic> data) {
-    // If dbRef is null or empty, return data as-is (for presets)
+    // If dbRef is null or empty, we're loading a preset
     if (widget.dbRef == null || widget.dbRef!.isEmpty) {
-      return data;
+      // Extract the preset data based on the preset title
+      String presetKey = _getPresetKey(widget.presetTitle);
+
+      if (data.containsKey(presetKey) && data[presetKey] is Map) {
+        print('✅ Found preset data for key: $presetKey');
+        return Map<String, dynamic>.from(data[presetKey]);
+      }
+
+      print('⚠️ Could not find preset key: $presetKey in data');
+      return {};
     }
 
     // Get the last segment of the path (e.g., 'fire_sensor_configs')
@@ -182,6 +191,21 @@ class _PresetContentState extends State<PresetContent> {
     // If we reach here, we couldn't find the config, return empty map
     print('⚠️ Could not extract config for $configKey, returning empty map');
     return {};
+  }
+
+  String _getPresetKey(String presetTitle) {
+    switch (presetTitle) {
+      case 'Morning':
+        return 'morning_preset';
+      case 'Afternoon':
+        return 'afternoon_preset';
+      case 'Evening':
+        return 'evening_preset';
+      case 'Night':
+        return 'night_preset';
+      default:
+        return presetTitle.toLowerCase().replaceAll(' ', '_');
+    }
   }
 
   void _applyDataToControllers(Map<String, dynamic> configData) {
