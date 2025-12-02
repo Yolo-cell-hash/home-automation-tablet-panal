@@ -10,7 +10,6 @@ import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-// Background message handler (must be top-level)
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   print('Background message: ${message.notification?.title}');

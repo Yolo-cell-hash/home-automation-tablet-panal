@@ -371,7 +371,7 @@ class _VDBState extends State<VDB> {
                   children: [
                     const Center(
                       child: Text(
-                        'Main Door',
+                        'VDB - Main Door',
                         style: TextStyle(
                           fontSize: 25,
                           fontWeight: FontWeight.w700,
@@ -565,179 +565,245 @@ class _VDBState extends State<VDB> {
                       ),
                     const SizedBox(height: 30),
                     if (isStreamStarted)
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _CupertinoFuncButton(
-                            btnLabel: 'Unlock',
-                            icon: CupertinoIcons.lock_open,
-                            onPressed: () async {
-                              DatabaseReference userResponseFieldRef = database
-                                  .ref('/dev_env/unlockDoor');
-                              try {
-                                await userResponseFieldRef.set(true);
-                                await webApi.unlockDoor(context);
-                              } catch (e) {
-                                appState.hideLoader();
-                                _showCupertinoDialog(
-                                  title: 'Error',
-                                  message: 'Failed to Unlock Door',
-                                  onConfirm: () {},
-                                  isError: true,
-                                );
-                              }
-                            },
-                          ),
-                          _CupertinoFuncButton(
-                            btnLabel: 'Capture',
-                            icon: CupertinoIcons.camera,
-                            onPressed: () async {
-                              try {
-                                final GlobalKey repaintBoundaryKey =
-                                    GlobalKey();
-                                setState(() {
-                                  _repaintBoundaryKey = repaintBoundaryKey;
-                                });
-                                await Future.delayed(
-                                  const Duration(milliseconds: 100),
-                                );
-
-                                RenderRepaintBoundary boundary =
-                                    repaintBoundaryKey.currentContext!
-                                            .findRenderObject()
-                                        as RenderRepaintBoundary;
-                                ui.Image image = await boundary.toImage(
-                                  pixelRatio: 3.0,
-                                );
-                                ByteData? byteData = await image.toByteData(
-                                  format: ui.ImageByteFormat.png,
-                                );
-                                Uint8List imageBytes = byteData!.buffer
-                                    .asUint8List();
-
-                                final result =
-                                    await ImageGallerySaverPlus.saveImage(
-                                      imageBytes,
-                                      quality: 100,
-                                      name:
-                                          'door_capture_${DateTime.now().millisecondsSinceEpoch}',
-                                    );
-
-                                if (result != null && result['isSuccess']) {
-                                  _showCupertinoDialog(
-                                    title: 'Success',
-                                    message: 'Image saved to gallery',
-                                    onConfirm: () {},
-                                  );
-                                } else {
-                                  throw Exception('Failed to save image');
-                                }
-                              } catch (e) {
-                                _showCupertinoDialog(
-                                  title: 'Error',
-                                  message: 'Failed to capture image',
-                                  onConfirm: () {},
-                                  isError: true,
-                                );
-                              }
-                            },
-                          ),
-                          _CupertinoFuncButton(
-                            btnLabel: _isRecording ? 'Stop' : 'Record',
-                            icon: _isRecording
-                                ? CupertinoIcons.stop_fill
-                                : CupertinoIcons.circle_fill,
-                            onPressed: () async {
-                              if (_isRecording) {
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12.0,
+                          horizontal: 16.0,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16.0),
+                          color: Colors.lightBlueAccent.withOpacity(0.2),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _CupertinoFuncButton(
+                              btnLabel: 'Unlock',
+                              icon: CupertinoIcons.lock,
+                              onPressed: () async {
+                                DatabaseReference userResponseFieldRef =
+                                    database.ref('/dev_env/unlockDoor');
                                 try {
-                                  _recordingTimer?.cancel();
-                                  await _mediaRecorder?.stop();
+                                  await userResponseFieldRef.set(true);
+                                  await webApi.unlockDoor(context);
+                                } catch (e) {
+                                  appState.hideLoader();
+                                  _showCupertinoDialog(
+                                    title: 'Error',
+                                    message: 'Failed to Unlock Door',
+                                    onConfirm: () {},
+                                    isError: true,
+                                  );
+                                }
+                              },
+                            ),
+                            _CupertinoFuncButton(
+                              btnLabel: 'Capture',
+                              icon: CupertinoIcons.camera,
+                              onPressed: () async {
+                                try {
+                                  final GlobalKey repaintBoundaryKey =
+                                      GlobalKey();
+                                  setState(() {
+                                    _repaintBoundaryKey = repaintBoundaryKey;
+                                  });
+                                  await Future.delayed(
+                                    const Duration(milliseconds: 100),
+                                  );
+
+                                  RenderRepaintBoundary boundary =
+                                      repaintBoundaryKey.currentContext!
+                                              .findRenderObject()
+                                          as RenderRepaintBoundary;
+                                  ui.Image image = await boundary.toImage(
+                                    pixelRatio: 3.0,
+                                  );
+                                  ByteData? byteData = await image.toByteData(
+                                    format: ui.ImageByteFormat.png,
+                                  );
+                                  Uint8List imageBytes = byteData!.buffer
+                                      .asUint8List();
+
                                   final result =
-                                      await ImageGallerySaverPlus.saveFile(
-                                        _recordedFilePath!,
+                                      await ImageGallerySaverPlus.saveImage(
+                                        imageBytes,
+                                        quality: 100,
                                         name:
-                                            'door_recording_${DateTime.now().millisecondsSinceEpoch}',
+                                            'door_capture_${DateTime.now().millisecondsSinceEpoch}',
                                       );
 
                                   if (result != null && result['isSuccess']) {
                                     _showCupertinoDialog(
                                       title: 'Success',
-                                      message: 'Video saved to gallery',
+                                      message: 'Image saved to gallery',
                                       onConfirm: () {},
                                     );
                                   } else {
-                                    throw Exception('Failed to save video');
+                                    throw Exception('Failed to save image');
                                   }
-
-                                  setState(() {
-                                    _isRecording = false;
-                                    _mediaRecorder = null;
-                                    _recordingDuration = 0;
-                                  });
                                 } catch (e) {
                                   _showCupertinoDialog(
                                     title: 'Error',
-                                    message: 'Failed to save recording',
+                                    message: 'Failed to capture image',
                                     onConfirm: () {},
                                     isError: true,
                                   );
                                 }
-                              } else {
-                                try {
-                                  if (_remoteRenderer.srcObject == null) {
-                                    throw Exception(
-                                      'No video stream to record',
+                              },
+                            ),
+                            _CupertinoFuncButton(
+                              btnLabel: _isRecording ? 'Stop' : 'Record',
+                              icon: _isRecording
+                                  ? CupertinoIcons.stop_fill
+                                  : CupertinoIcons.circle_fill,
+                              onPressed: () async {
+                                if (_isRecording) {
+                                  try {
+                                    _recordingTimer?.cancel();
+                                    await _mediaRecorder?.stop();
+                                    final result =
+                                        await ImageGallerySaverPlus.saveFile(
+                                          _recordedFilePath!,
+                                          name:
+                                              'door_recording_${DateTime.now().millisecondsSinceEpoch}',
+                                        );
+
+                                    if (result != null && result['isSuccess']) {
+                                      _showCupertinoDialog(
+                                        title: 'Success',
+                                        message: 'Video saved to gallery',
+                                        onConfirm: () {},
+                                      );
+                                    } else {
+                                      throw Exception('Failed to save video');
+                                    }
+
+                                    setState(() {
+                                      _isRecording = false;
+                                      _mediaRecorder = null;
+                                      _recordingDuration = 0;
+                                    });
+                                  } catch (e) {
+                                    _showCupertinoDialog(
+                                      title: 'Error',
+                                      message: 'Failed to save recording',
+                                      onConfirm: () {},
+                                      isError: true,
                                     );
                                   }
+                                } else {
+                                  try {
+                                    if (_remoteRenderer.srcObject == null) {
+                                      throw Exception(
+                                        'No video stream to record',
+                                      );
+                                    }
 
-                                  Directory tempDir =
-                                      await getTemporaryDirectory();
-                                  String tempPath =
-                                      '${tempDir.path}/temp_recording_${DateTime.now().millisecondsSinceEpoch}.mp4';
-                                  _recordedFilePath = tempPath;
+                                    Directory tempDir =
+                                        await getTemporaryDirectory();
+                                    String tempPath =
+                                        '${tempDir.path}/temp_recording_${DateTime.now().millisecondsSinceEpoch}.mp4';
+                                    _recordedFilePath = tempPath;
 
-                                  _mediaRecorder = MediaRecorder();
-                                  final videoTrack = _remoteRenderer.srcObject!
-                                      .getVideoTracks()
-                                      .first;
+                                    _mediaRecorder = MediaRecorder();
+                                    final videoTrack = _remoteRenderer
+                                        .srcObject!
+                                        .getVideoTracks()
+                                        .first;
 
-                                  await _mediaRecorder!.start(
-                                    tempPath,
-                                    videoTrack: videoTrack,
-                                  );
+                                    await _mediaRecorder!.start(
+                                      tempPath,
+                                      videoTrack: videoTrack,
+                                    );
 
-                                  setState(() {
-                                    _isRecording = true;
-                                    _recordingDuration = 0;
-                                  });
+                                    setState(() {
+                                      _isRecording = true;
+                                      _recordingDuration = 0;
+                                    });
 
-                                  _recordingTimer = Timer.periodic(
-                                    const Duration(seconds: 1),
-                                    (timer) {
-                                      setState(() {
-                                        _recordingDuration++;
-                                      });
-                                    },
-                                  );
+                                    _recordingTimer = Timer.periodic(
+                                      const Duration(seconds: 1),
+                                      (timer) {
+                                        setState(() {
+                                          _recordingDuration++;
+                                        });
+                                      },
+                                    );
 
-                                  _showCupertinoDialog(
-                                    title: 'Recording',
-                                    message: 'Video recording started',
-                                    onConfirm: () {},
-                                  );
-                                } catch (e) {
-                                  _showCupertinoDialog(
-                                    title: 'Error',
-                                    message: 'Failed to start recording',
-                                    onConfirm: () {},
-                                    isError: true,
-                                  );
+                                    _showCupertinoDialog(
+                                      title: 'Recording',
+                                      message: 'Video recording started',
+                                      onConfirm: () {},
+                                    );
+                                  } catch (e) {
+                                    _showCupertinoDialog(
+                                      title: 'Error',
+                                      message: 'Failed to start recording',
+                                      onConfirm: () {},
+                                      isError: true,
+                                    );
+                                  }
                                 }
-                              }
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    const SizedBox(height: 30),
+
+                    const Center(
+                      child: Text(
+                        'User Management',
+                        style: TextStyle(
+                          fontSize: 25,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 12.0,
+                        horizontal: 16.0,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16.0),
+                        color: Colors.lightBlueAccent.withOpacity(0.2),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _CupertinoFuncButton(
+                            btnLabel: 'Add User',
+                            icon: CupertinoIcons.add,
+                            onPressed: () {
+                              print('Clicked Add User');
+                            },
+                          ),
+                          _CupertinoFuncButton(
+                            btnLabel: 'Delete User',
+                            icon: CupertinoIcons.delete,
+                            onPressed: () {
+                              print('Clicked Delete User');
+                            },
+                          ),
+                          _CupertinoFuncButton(
+                            btnLabel: 'View Users',
+                            icon: CupertinoIcons.list_bullet,
+                            onPressed: () {
+                              print('Clicked View Users');
+                            },
+                          ),
+                          _CupertinoFuncButton(
+                            btnLabel: 'Verify Users',
+                            icon: CupertinoIcons.eye,
+                            onPressed: () {
+                              print('Clicked View Users');
                             },
                           ),
                         ],
                       ),
+                    ),
                   ],
                 ),
               ),
