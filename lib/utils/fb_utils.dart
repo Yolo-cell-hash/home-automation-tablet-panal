@@ -1,7 +1,21 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'dart:async';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter/material.dart';
+import 'package:home_automation_tablet/utils/app_state.dart';
 
 class FirebaseUtils {
+  late DatabaseReference _dbRef1;
+  StreamSubscription<DatabaseEvent>? _dbSubscription, _dbSubscription1;
+  dynamic dbResponse1;
+  late FirebaseApp firebaseApp;
+  late FirebaseDatabase database;
+  late String ipType;
+  late bool wifiState;
+
   static final FirebaseDatabase _database = FirebaseDatabase.instanceFor(
     app: Firebase.app(),
     databaseURL:
@@ -302,13 +316,196 @@ class FirebaseUtils {
   /// Check database connection
   static Future<bool> checkConnection() async {
     try {
-      DatabaseReference connectedRef = _database.ref('. info/connected');
+      DatabaseReference connectedRef = _database.ref('.info/connected');
       DataSnapshot snapshot = await connectedRef.get();
 
       return snapshot.value == true;
     } catch (e) {
       print('❌ Error checking Firebase connection: $e');
       return false;
+    }
+  }
+
+  // FIXED: Constructor name must match class name
+  FirebaseUtils() {
+    firebaseApp = Firebase.app();
+    database = FirebaseDatabase.instanceFor(
+      app: firebaseApp,
+      databaseURL:
+          'https://vdb-poc-default-rtdb.asia-southeast1.firebasedatabase.app/',
+    );
+  }
+
+  Future<Map<String, dynamic>> backgroundListen(
+    Future<FirebaseApp> initialization,
+    BuildContext context,
+  ) async {
+    final completer = Completer<Map<String, dynamic>>();
+    initialization.then((firebaseApp) {
+      FirebaseDatabase database = FirebaseDatabase.instanceFor(
+        app: firebaseApp,
+        databaseURL:
+            'https://vdb-poc-default-rtdb.asia-southeast1.firebasedatabase.app/',
+      );
+      _dbRef1 = database.ref("dev_env");
+
+      _dbSubscription = _dbRef1.onValue.listen(
+        (DatabaseEvent event) {
+          if (event.snapshot.exists) {
+            dbResponse1 = event.snapshot.value;
+            final appState = Provider.of<AppState>(context, listen: false);
+            if (dbResponse1 is Map) {
+              appState.setWifiState(dbResponse1['wifi_state']);
+            }
+
+            print("Data updated: ${event.snapshot.value}");
+
+            if (!completer.isCompleted) {
+              if (dbResponse1 is Map) {
+                completer.complete(Map<String, dynamic>.from(dbResponse1));
+              } else {
+                completer.complete({});
+              }
+            }
+          } else {
+            dbResponse1 = null;
+            print("No data at path");
+            if (!completer.isCompleted) {
+              completer.complete({});
+            }
+          }
+        },
+        onError: (error) {
+          print("Error listening to database: $error");
+          if (!completer.isCompleted) {
+            completer.completeError(error);
+          }
+        },
+      );
+    });
+    return completer.future;
+  }
+
+  Future<void> handler(RemoteMessage message) async {
+    print('Title : ${message.notification!.title}');
+    print('Title : ${message.notification!.body}');
+  }
+
+  Future<void> fbPushNotification() async {
+    final firebaseMessaging = FirebaseMessaging.instance;
+    await firebaseMessaging.requestPermission();
+    FirebaseMessaging.onBackgroundMessage(handler);
+  }
+
+  Future<String?> readIpType() async {
+    try {
+      final dbRef = FirebaseDatabase.instance.ref('dev_env/ip_type');
+      final snapshot = await dbRef.get();
+      if (snapshot.exists) {
+        ipType = snapshot.value as String;
+        return ipType;
+      }
+      return null;
+    } catch (e) {
+      print("Error reading IP Type: $e");
+      return null;
+    }
+  }
+
+  // Add this method to fb_utils.dart in the FirebaseUtils class
+
+  /// Listen to IP address changes in real-time
+  /// IP is always stored at /dev_env/ipv6 regardless of type
+  StreamSubscription<DatabaseEvent> listenToIpAddress({
+    required Function(String ip, String ipType) onIpChanged,
+  }) {
+    DatabaseReference ipRef = database.ref('dev_env');
+
+    return ipRef.onValue.listen(
+      (DatabaseEvent event) {
+        if (event.snapshot.exists) {
+          final data = event.snapshot.value as Map<dynamic, dynamic>;
+
+          String? ip = data['ipv6']?.toString();
+          String? ipType = data['ip_type']?.toString();
+
+          print('🔍 Firebase update: ipv6=$ip, ipType=$ipType');
+
+          if (ip != null &&
+              ip.isNotEmpty &&
+              ipType != null &&
+              ipType.isNotEmpty) {
+            print('📡 IP Address changed: $ip (Type: $ipType)');
+            onIpChanged(ip, ipType);
+          } else {
+            print('⚠️ Invalid IP data: ip=$ip, type=$ipType');
+          }
+        }
+      },
+      onError: (error) {
+        print('❌ Error listening to IP address: $error');
+      },
+    );
+  }
+
+  /// Read initial IP address from Firebase
+  Future<Map<String, String?>> readIpAddress() async {
+    try {
+      final dbRef = database.ref('dev_env');
+      final snapshot = await dbRef.get();
+
+      if (snapshot.exists) {
+        final data = snapshot.value as Map<dynamic, dynamic>;
+
+        String? ip = data['ipv6']?.toString();
+        String? ipType = data['ip_type']?.toString();
+
+        print('🔍 Raw Firebase data: ipv6=$ip, ipType=$ipType');
+
+        if (ip == null || ip.isEmpty) {
+          print('⚠️ Warning: IP address is empty at /dev_env/ipv6');
+          return {'ip': null, 'ipType': ipType};
+        }
+
+        print('📖 Read IP: $ip (Type: $ipType)');
+
+        return {'ip': ip, 'ipType': ipType};
+      } else {
+        print('❌ No data exists at /dev_env');
+      }
+
+      return {'ip': null, 'ipType': null};
+    } catch (e) {
+      print('❌ Error reading IP address: $e');
+      return {'ip': null, 'ipType': null};
+    }
+  }
+
+  Future<bool> readWifiState() async {
+    try {
+      final dbRef = FirebaseDatabase.instance.ref('dev_env/wifi_state');
+      final snapshot = await dbRef.get();
+      if (snapshot.exists) {
+        wifiState = snapshot.value as bool;
+        print('Wifi State - $wifiState');
+        return wifiState;
+      } else {
+        print('Wifi State - $wifiState');
+        return false;
+      }
+    } catch (e) {
+      print("Error reading WiFi State - $e");
+      return false;
+    }
+  }
+
+  Future<void> getNotifPermission() async {
+    var status = await Permission.notification.status;
+    if (status.isDenied) {
+      Permission.notification.request();
+    }
+    if (await Permission.location.isRestricted) {
+      Permission.notification.request();
     }
   }
 }

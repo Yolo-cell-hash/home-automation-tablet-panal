@@ -2,6 +2,23 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>We need Bluetooth access to control your home devices</string>
+    <key>NSBluetoothPeripheralUsageDescription</key>
+    <string>We need Bluetooth access to connect with your devices</string>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>We need location access for device connectivity</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>We need location access for device connectivity</string>
+    <key>NSUserNotificationsUsageDescription</key>
+    <string>We need notification access to alert you about device status</string>
+
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>We need permission to save photos and videos to your library for your convenience.</string>
+
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>We need permission to access your photo library to view and select your photos and videos.</string>
+
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>

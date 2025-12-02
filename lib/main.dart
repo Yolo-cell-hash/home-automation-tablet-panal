@@ -7,8 +7,8 @@ import 'package:home_automation_tablet/screens/splash_screen.dart';
 import 'package:home_automation_tablet/screens/home_screen.dart';
 import 'package:home_automation_tablet/utils/app_state.dart';
 import 'package:provider/provider.dart';
-
 import 'firebase_options.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 // Background message handler (must be top-level)
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -16,10 +16,26 @@ Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   print('Background message: ${message.notification?.title}');
 }
 
+Future<void> _requestAllPermissions() async {
+  final permissions = [
+    Permission.bluetooth,
+    Permission.bluetoothScan,
+    Permission.bluetoothConnect,
+    Permission.location,
+    Permission.locationWhenInUse,
+    Permission.notification,
+    Permission.storage,
+  ];
+
+  await permissions.request();
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+
+  await _requestAllPermissions();
   runApp(
     ChangeNotifierProvider(
       create: (context) => AppState(),

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:home_automation_tablet/widgets/sensor_card.dart';
+import 'package:home_automation_tablet/screens/front_door_page.dart';
+import 'package:home_automation_tablet/screens/vdb.dart';
+import 'package:home_automation_tablet/screens/connectivity_page.dart';
 
 class LockUtility extends StatefulWidget {
   const LockUtility({super.key});
@@ -32,7 +35,7 @@ class _LockUtilityState extends State<LockUtility> {
               textAlign: TextAlign.center,
             ),
             SizedBox(
-              height: 230, // Match SensorCard's default height
+              height: 230,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -41,16 +44,22 @@ class _LockUtilityState extends State<LockUtility> {
                     title: 'Front Door',
                     icon: 'images/smart-lock.png',
                     elevation: 0,
+                    useNavigation: true,
+                    navigationPage: FrontDoorPage(),
                   ),
                   SensorCard(
                     title: 'VDB',
                     icon: 'images/door-bell.png',
                     elevation: 0,
+                    useNavigation: true,
+                    navigationPage: VDB(),
                   ),
                   SensorCard(
                     title: 'Connectivity',
                     icon: 'images/wi-fi-icon.png',
                     elevation: 0,
+                    useNavigation: true,
+                    navigationPage: ConnectivityPage(),
                   ),
                 ],
               ),

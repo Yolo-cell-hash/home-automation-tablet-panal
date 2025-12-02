@@ -9,6 +9,8 @@ class SensorCard extends StatefulWidget {
   final double? height;
   final double? elevation;
   final String dbRef;
+  final bool useNavigation;
+  final Widget? navigationPage;
 
   const SensorCard({
     super.key,
@@ -17,6 +19,8 @@ class SensorCard extends StatefulWidget {
     this.height,
     this.elevation,
     this.dbRef = '',
+    this.useNavigation = false,
+    this.navigationPage,
   });
 
   @override
@@ -24,6 +28,45 @@ class SensorCard extends StatefulWidget {
 }
 
 class _SensorCardState extends State<SensorCard> {
+  void _handleTap(BuildContext context) {
+    if (widget.useNavigation && widget.navigationPage != null) {
+      Navigator.of(
+        context,
+      ).push(CupertinoPageRoute(builder: (context) => widget.navigationPage!));
+    } else {
+      showCupertinoDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return FadeIn(
+            child: CupertinoAlertDialog(
+              title: Text(
+                '${widget.title} Preset',
+                style: TextStyle(color: CupertinoColors.black),
+              ),
+              content: PresetContent(
+                presetTitle: widget.title,
+                dbRef: widget.dbRef,
+              ),
+              actions: [
+                Center(
+                  child: CupertinoDialogAction(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: Text(
+                      'Close',
+                      style: TextStyle(color: CupertinoColors.systemBlue),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Expanded(
@@ -31,38 +74,7 @@ class _SensorCardState extends State<SensorCard> {
         height: widget.height ?? 230,
         margin: const EdgeInsets.all(15),
         child: GestureDetector(
-          onTap: () {
-            showCupertinoDialog(
-              context: context,
-              builder: (BuildContext context) {
-                return FadeIn(
-                  child: CupertinoAlertDialog(
-                    title: Text(
-                      '${widget.title} Preset',
-                      style: TextStyle(color: CupertinoColors.black),
-                    ),
-                    content: PresetContent(
-                      presetTitle: widget.title,
-                      dbRef: widget.dbRef,
-                    ),
-                    actions: [
-                      Center(
-                        child: CupertinoDialogAction(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          child: Text(
-                            'Close',
-                            style: TextStyle(color: CupertinoColors.systemBlue),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            );
-          },
+          onTap: () => _handleTap(context),
           child: Container(
             decoration: BoxDecoration(
               color: Colors.lightBlue[400]!,
