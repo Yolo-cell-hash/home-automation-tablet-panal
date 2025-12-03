@@ -12,7 +12,90 @@ class UserCardRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        print('You tapped a user - $name');
+        showCupertinoDialog(
+          context: context,
+          barrierDismissible: true,
+          builder: (context) => GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              color: CupertinoColors.black.withOpacity(0.5),
+              child: Center(
+                child: GestureDetector(
+                  onTap: () {}, // Prevents closing when tapping the content
+                  child: Container(
+                    width: MediaQuery.of(context).size.width * 0.7,
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.85,
+                    ),
+                    decoration: BoxDecoration(
+                      color: CupertinoColors.systemBackground,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: CupertinoColors.activeBlue,
+                            border: Border(
+                              bottom: BorderSide(
+                                color: CupertinoColors.separator.withOpacity(
+                                  0.5,
+                                ),
+                                width: 0.5,
+                              ),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  name,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              CupertinoButton(
+                                padding: EdgeInsets.zero,
+                                onPressed: () => Navigator.pop(context),
+                                child: const Icon(
+                                  CupertinoIcons.xmark_circle_fill,
+                                  color: CupertinoColors.systemGrey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Image content
+                        Flexible(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: InteractiveViewer(
+                              panEnabled: true,
+                              minScale: 1.0,
+                              maxScale: 4.0,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.memory(
+                                  imageData!,
+                                  fit: BoxFit.contain,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
       },
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -32,55 +115,19 @@ class UserCardRow extends StatelessWidget {
           child: Row(
             children: [
               imageData != null
-                  ? GestureDetector(
-                      onTap: () {
-                        showCupertinoDialog(
-                          context: context,
-                          builder: (context) => FadeIn(
-                            child: CupertinoAlertDialog(
-                              title: Text(
-                                name,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              content: Padding(
-                                padding: const EdgeInsets.only(top: 12.0),
-                                child: InteractiveViewer(
-                                  panEnabled: true,
-                                  minScale: 1.0,
-                                  maxScale: 4.0,
-                                  child: Image.memory(
-                                    imageData!,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                              ),
-                              actions: [
-                                CupertinoDialogAction(
-                                  child: const Text('Close'),
-                                  onPressed: () => Navigator.pop(context),
-                                ),
-                              ],
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(28),
+                      child: Image.memory(
+                        imageData!,
+                        width: 56,
+                        height: 56,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(
+                              CupertinoIcons.exclamationmark_triangle,
+                              color: CupertinoColors.systemRed,
+                              size: 28,
                             ),
-                          ),
-                        );
-                      },
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(28),
-                        child: Image.memory(
-                          imageData!,
-                          width: 56,
-                          height: 56,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(
-                                CupertinoIcons.exclamationmark_triangle,
-                                color: CupertinoColors.systemRed,
-                                size: 28,
-                              ),
-                        ),
                       ),
                     )
                   : Container(
@@ -104,6 +151,11 @@ class UserCardRow extends StatelessWidget {
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                 ),
+              ),
+              const Spacer(),
+              const Icon(
+                CupertinoIcons.chevron_forward,
+                color: CupertinoColors.systemGrey,
               ),
             ],
           ),
