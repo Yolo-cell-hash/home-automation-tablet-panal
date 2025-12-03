@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -34,30 +35,45 @@ class _ViewUsersWidgetState extends State<ViewUsersWidget> {
     if (encodedImage == null) return null;
 
     try {
-      if (encodedImage is Map) {
-        if (encodedImage.containsKey('_byteString')) {
-          final byteString = encodedImage['_byteString'];
-          if (byteString is String && byteString.isNotEmpty) {
-            return base64Decode(byteString);
-          }
+      if (encodedImage is String) {
+        if (encodedImage.isEmpty) {
+          return null;
         }
-        // Check for bytes field
+
+        String base64String = encodedImage;
+        if (encodedImage.contains(',')) {
+          base64String = encodedImage.split(',').last;
+        }
+
+        return base64Decode(base64String);
+      }
+
+      if (encodedImage is Uint8List) {
+        return encodedImage;
+      }
+
+      if (encodedImage is List) {
+        return Uint8List.fromList(encodedImage.cast<int>());
+      }
+
+      if (encodedImage is Map) {
         if (encodedImage.containsKey('bytes')) {
           final bytes = encodedImage['bytes'];
-          if (bytes is Uint8List) {
-            return bytes;
+          if (bytes is String) {
+            return base64Decode(bytes);
+          }
+          if (bytes is List) {
+            return Uint8List.fromList(bytes.cast<int>());
           }
         }
-      } else if (encodedImage is Blob) {
-        return encodedImage.bytes;
-      } else if (encodedImage is String && encodedImage.isNotEmpty) {
-        return base64Decode(encodedImage);
+
+        if (encodedImage.containsKey('data')) {
+          return _decodeBase64Image(encodedImage['data']);
+        }
       }
+
       return null;
-    } catch (e) {
-      print('Error decoding image: $e');
-      print('Image data type: ${encodedImage.runtimeType}');
-      print('Image data: $encodedImage');
+    } catch (e, stackTrace) {
       return null;
     }
   }
