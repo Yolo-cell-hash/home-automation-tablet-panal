@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart' show Colors;
+import 'package:home_automation_tablet/widgets/view_users_widget.dart';
 import 'package:modal_progress_hud_nsn/modal_progress_hud_nsn.dart';
 import '../utils/janus_webrtc_client.dart';
 import 'package:home_automation_tablet/utils/fb_utils.dart';
@@ -18,6 +19,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:home_automation_tablet/widgets/add_users_widget.dart';
 
 class VDB extends StatefulWidget {
   const VDB({super.key});
@@ -30,6 +32,7 @@ class _VDBState extends State<VDB> {
   late String ip;
   late String? ipType;
   String? _recordedFilePath;
+  bool isViewUserClicked = false;
   bool isStremVisible = false;
   bool isStreamStarted = false;
   String counterValue = '0';
@@ -750,60 +753,71 @@ class _VDBState extends State<VDB> {
                         ),
                       ),
                     const SizedBox(height: 30),
-
-                    const Center(
-                      child: Text(
-                        'User Management',
-                        style: TextStyle(
-                          fontSize: 25,
-                          fontWeight: FontWeight.w700,
+                    if (isStreamStarted)
+                      const Center(
+                        child: Text(
+                          'User Management',
+                          style: TextStyle(
+                            fontSize: 25,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
                       ),
-                    ),
                     const SizedBox(height: 30),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 12.0,
-                        horizontal: 16.0,
+                    if (isStreamStarted)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 12.0,
+                          horizontal: 16.0,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16.0),
+                          color: Colors.lightBlueAccent.withOpacity(0.2),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _CupertinoFuncButton(
+                              btnLabel: 'Add User',
+                              icon: CupertinoIcons.add,
+                              onPressed: () {
+                                print('Clicked Add User');
+                              },
+                            ),
+                            _CupertinoFuncButton(
+                              btnLabel: 'Delete User',
+                              icon: CupertinoIcons.delete,
+                              onPressed: () {
+                                print('Clicked Delete User');
+                              },
+                            ),
+                            _CupertinoFuncButton(
+                              btnLabel: 'View Users',
+                              icon: CupertinoIcons.list_bullet,
+                              onPressed: () {
+                                setState(() {
+                                  isViewUserClicked = !isViewUserClicked;
+                                });
+                                print('Clicked View Users');
+                              },
+                            ),
+                            _CupertinoFuncButton(
+                              btnLabel: 'Verify Users',
+                              icon: CupertinoIcons.eye,
+                              onPressed: () {
+                                print('Clicked View Users');
+                              },
+                            ),
+                          ],
+                        ),
                       ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16.0),
-                        color: Colors.lightBlueAccent.withOpacity(0.2),
+                    if (isViewUserClicked)
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 30.0),
+                          child: ViewUsersWidget(),
+                        ),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _CupertinoFuncButton(
-                            btnLabel: 'Add User',
-                            icon: CupertinoIcons.add,
-                            onPressed: () {
-                              print('Clicked Add User');
-                            },
-                          ),
-                          _CupertinoFuncButton(
-                            btnLabel: 'Delete User',
-                            icon: CupertinoIcons.delete,
-                            onPressed: () {
-                              print('Clicked Delete User');
-                            },
-                          ),
-                          _CupertinoFuncButton(
-                            btnLabel: 'View Users',
-                            icon: CupertinoIcons.list_bullet,
-                            onPressed: () {
-                              print('Clicked View Users');
-                            },
-                          ),
-                          _CupertinoFuncButton(
-                            btnLabel: 'Verify Users',
-                            icon: CupertinoIcons.eye,
-                            onPressed: () {
-                              print('Clicked View Users');
-                            },
-                          ),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
               ),
