@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 import 'package:flutter/cupertino.dart';
-import 'package:animate_do/animate_do.dart';
 
 class UserCardRow extends StatelessWidget {
   final String name;
